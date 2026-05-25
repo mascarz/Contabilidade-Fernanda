@@ -7,12 +7,11 @@ import Clientes from './pages/admin/Clientes';
 import Notificacoes from './pages/admin/Notificacoes';
 import Perfil from './pages/admin/Perfil';
 import Booking from './pages/client/Booking';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Smartphone, ShieldCheck } from 'lucide-react';
 
-function App() {
+const AdminLayout: React.FC = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
-  const [view, setView] = useState<'admin' | 'client'>('admin');
 
   const renderAdminContent = () => {
     switch (activeTab) {
@@ -26,35 +25,12 @@ function App() {
     }
   };
 
-  if (view === 'client') {
-    return (
-      <div className="relative">
-        <Booking />
-        <button 
-          onClick={() => setView('admin')}
-          className="fixed top-4 right-4 z-50 bg-secondary text-white p-3 rounded-2xl shadow-xl flex items-center gap-2 text-xs font-bold"
-        >
-          <ShieldCheck size={16} /> Admin
-        </button>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-white pb-24 relative">
-      {/* View Switcher (Demo Only) */}
-      <button 
-        onClick={() => setView('client')}
-        className="fixed top-4 right-4 z-50 bg-primary text-white p-3 rounded-2xl shadow-xl flex items-center gap-2 text-xs font-bold"
-      >
-        <Smartphone size={16} /> Ver como Cliente
-      </button>
-
-      {/* Header Mobile */}
       <header className="px-6 pt-8 pb-4 flex justify-between items-center bg-white sticky top-0 z-40">
         <div>
           <h1 className="text-sm font-medium text-gray-400">Olá, Fernanda</h1>
-          <p className="text-xl font-bold text-secondary">Bem-vinda de volta</p>
+          <p className="text-xl font-bold text-secondary">Painel Administrativo</p>
         </div>
         <div className="w-12 h-12 rounded-2xl bg-gray-100 flex items-center justify-center overflow-hidden border-2 border-primary/20">
           <img 
@@ -81,6 +57,23 @@ function App() {
 
       <BottomNav activeTab={activeTab} setActiveTab={setActiveTab} />
     </div>
+  );
+};
+
+function App() {
+  return (
+    <Router>
+      <Routes>
+        {/* Rota do Cliente: Raiz do site */}
+        <Route path="/" element={<Booking />} />
+        
+        {/* Rota da Fernanda: /admin */}
+        <Route path="/admin" element={<AdminLayout />} />
+        
+        {/* Redirecionar qualquer outra rota para o cliente */}
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </Router>
   );
 }
 
