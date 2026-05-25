@@ -9,9 +9,11 @@ import Perfil from './pages/admin/Perfil';
 import Booking from './pages/client/Booking';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
+import { useApp } from './context/AppContext';
 
 const AdminLayout: React.FC = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
+  const { theme } = useApp();
 
   const renderAdminContent = () => {
     switch (activeTab) {
@@ -26,13 +28,13 @@ const AdminLayout: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-white pb-24 relative">
-      <header className="px-6 pt-8 pb-4 flex justify-between items-center bg-white sticky top-0 z-40">
+    <div className={`min-h-screen pb-24 relative transition-colors duration-500 ${theme === 'black' ? 'bg-secondary' : 'bg-white'}`}>
+      <header className={`px-6 pt-8 pb-4 flex justify-between items-center sticky top-0 z-40 transition-colors duration-500 ${theme === 'black' ? 'bg-secondary' : 'bg-white'}`}>
         <div>
           <h1 className="text-sm font-medium text-gray-400">Olá, Fernanda</h1>
-          <p className="text-xl font-bold text-secondary">Painel Administrativo</p>
+          <p className={`text-xl font-bold transition-colors ${theme === 'black' ? 'text-white' : 'text-secondary'}`}>Painel Administrativo</p>
         </div>
-        <div className="w-12 h-12 rounded-2xl bg-gray-100 flex items-center justify-center overflow-hidden border-2 border-primary/20">
+        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center overflow-hidden border-2 ${theme === 'black' ? 'bg-secondary-light border-primary/40' : 'bg-gray-100 border-primary/20'}`}>
           <img 
             src="https://api.dicebear.com/7.x/avataaars/svg?seed=Fernanda" 
             alt="Fernanda" 
@@ -64,13 +66,8 @@ function App() {
   return (
     <Router>
       <Routes>
-        {/* Rota do Cliente: Raiz do site */}
         <Route path="/" element={<Booking />} />
-        
-        {/* Rota da Fernanda: /admin */}
         <Route path="/admin" element={<AdminLayout />} />
-        
-        {/* Redirecionar qualquer outra rota para o cliente */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Router>

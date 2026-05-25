@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { Calendar, Clock, User, Phone, CheckCircle2, ChevronRight, ArrowLeft, Scissors } from 'lucide-react';
+import { Calendar, Clock, User, Phone, CheckCircle2, ChevronRight, ArrowLeft, Scissors, MapPin } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useApp } from '../../context/AppContext';
 
 const Booking: React.FC = () => {
-  const { services, addAppointment, addClient } = useApp();
+  const { services, addAppointment, addClient, workingHours, location } = useApp();
   const [step, setStep] = useState(1);
   const [selectedService, setSelectedService] = useState<any>(null);
   const [selectedDate, setSelectedDate] = useState<number | null>(null);
@@ -22,12 +22,15 @@ const Booking: React.FC = () => {
     { day: 'Sex', date: 29 },
   ];
 
-  const times = ['09:00', '10:00', '11:00', '14:00', '15:00', '16:00', '17:00'];
+  // Gerar horários dinâmicos com base nas configurações do dono
+  const times = Array.from(
+    { length: workingHours.end - workingHours.start + 1 }, 
+    (_, i) => `${(i + workingHours.start).toString().padStart(2, '0')}:00`
+  );
 
   const handleConfirm = () => {
     if (!selectedService || !selectedDate || !selectedTime || !formData.name || !formData.phone) return;
 
-    // 1. Adiciona ou recupera cliente
     const clientId = addClient({
       name: formData.name,
       phone: formData.phone,
@@ -37,7 +40,6 @@ const Booking: React.FC = () => {
       favorite: false
     });
 
-    // 2. Adiciona agendamento
     addAppointment({
       clientId,
       clientName: formData.name,
@@ -69,7 +71,7 @@ const Booking: React.FC = () => {
         <div className="flex gap-2">
           <div className="flex-1 bg-white/10 p-3 rounded-2xl border border-white/5">
             <p className="text-[10px] text-gray-400 uppercase font-bold">Local</p>
-            <p className="text-xs font-medium">São Paulo, SP</p>
+            <p className="text-[10px] font-medium truncate">{location}</p>
           </div>
           <div className="flex-1 bg-white/10 p-3 rounded-2xl border border-white/5">
             <p className="text-[10px] text-gray-400 uppercase font-bold">Avaliação</p>
