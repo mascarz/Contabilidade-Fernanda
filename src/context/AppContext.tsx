@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 
 export interface Service {
   id: string;
@@ -64,19 +64,41 @@ interface AppContextType {
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
+// Helper para carregar do localStorage
+const loadFromStorage = (key: string, defaultValue: any) => {
+  const saved = localStorage.getItem(key);
+  if (saved) {
+    try {
+      return JSON.parse(saved);
+    } catch (e) {
+      return defaultValue;
+    }
+  }
+  return defaultValue;
+};
+
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [appointments, setAppointments] = useState<Appointment[]>([]);
-  const [clients, setClients] = useState<Client[]>([]);
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [services, setServices] = useState<Service[]>([
+  const [appointments, setAppointments] = useState<Appointment[]>(() => loadFromStorage('fa_appointments', []));
+  const [clients, setClients] = useState<Client[]>(() => loadFromStorage('fa_clients', []));
+  const [transactions, setTransactions] = useState<Transaction[]>(() => loadFromStorage('fa_transactions', []));
+  const [services, setServices] = useState<Service[]>(() => loadFromStorage('fa_services', [
     { id: '1', name: 'Volume Brasileiro', time: '2h', price: 180.00 },
     { id: '2', name: 'Volume Russo', time: '2h 30min', price: 220.00 },
     { id: '3', name: 'Lash Lift', time: '1h', price: 120.00 },
     { id: '4', name: 'Sobrancelha', time: '40min', price: 45.00 },
-  ]);
-  const [workingHours, setWorkingHoursState] = useState<WorkingHours>({ start: 8, end: 19 });
-  const [location, setLocationState] = useState('São Paulo, SP');
-  const [theme, setThemeState] = useState<'white' | 'black'>('white');
+  ]));
+  const [workingHours, setWorkingHoursState] = useState<WorkingHours>(() => loadFromStorage('fa_workingHours', { start: 8, end: 19 }));
+  const [location, setLocationState] = useState(() => loadFromStorage('fa_location', 'São Paulo, SP'));
+  const [theme, setThemeState] = useState<'white' | 'black'>(() => loadFromStorage('fa_theme', 'white'));
+
+  // Persistir mudanças no localStorage
+  useEffect(() => { localStorage.setItem('fa_appointments', JSON.stringify(appointments)); }, [appointments]);
+  useEffect(() => { localStorage.setItem('fa_clients', JSON.stringify(clients)); }, [clients]);
+  useEffect(() => { localStorage.setItem('fa_transactions', JSON.stringify(transactions)); }, [transactions]);
+  useEffect(() => { localStorage.setItem('fa_services', JSON.stringify(services)); }, [services]);
+  useEffect(() => { localStorage.setItem('fa_workingHours', JSON.stringify(workingHours)); }, [workingHours]);
+  useEffect(() => { localStorage.setItem('fa_location', JSON.stringify(location)); }, [location]);
+  useEffect(() => { localStorage.setItem('fa_theme', JSON.stringify(theme)); }, [theme]);
 
   const addClient = (newClient: Omit<Client, 'id'>) => {
     const existingClient = clients.find(c => c.phone === newClient.phone);
@@ -90,8 +112,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const addAppointment = (newApp: Omit<Appointment, 'id'>) => {
     const id = Math.random().toString(36).substr(2, 9);
     const appointment = { ...newApp, id };
+    
     setAppointments(prev => [...prev, appointment]);
 
+    // Adiciona ao financeiro
     addTransaction({
       title: appointment.serviceName,
       clientName: appointment.clientName,
@@ -100,6 +124,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       category: 'Serviço',
       date: new Date().toLocaleDateString('pt-BR')
     });
+
+    // Atualiza estatísticas do cliente
+    setClients(prev => prev.map(c => {
+      if (c.phone === appointment.clientPhone) {
+        return {
+          ...c,
+          totalVisits: c.totalVisits + 1,
+          totalSpent: c.totalSpent + appointment.value,
+          lastVisit: new Date().toLocaleDateString('pt-BR')
+        };
+      }
+      return c;
+    }));
   };
 
   const addTransaction = (newTrans: Omit<Transaction, 'id'>) => {
@@ -107,13 +144,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setTransactions(prev => [ { ...newTrans, id }, ...prev]);
   };
 
+  const setWorkingHours = (hours: WorkingHours) => setWorkingHoursState(hours);
+  const setLocation = (loc: string) => setLocationState(loc);
+  const setTheme = (t: 'white' | 'black') => setThemeState(t);
+
   return (
     <AppContext.Provider value={{ 
       appointments, clients, transactions, services, workingHours, location, theme,
       setServices,
-      setWorkingHours: setWorkingHoursState,
-      setLocation: setLocationState,
-      setTheme: setThemeState,
+      setWorkingHours,
+      setLocation,
+      setTheme,
       addAppointment, addTransaction, addClient
     }}>
       {children}
